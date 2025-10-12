@@ -27,29 +27,33 @@ app.use(helmet());
 
 // CORS configuration - AHORA CORRECTO
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Lista de orígenes permitidos (sin paths)
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Lista de orígenes permitidos (sin paths - CORS usa solo origin, no path)
     const allowedOrigins = [
       'http://localhost:3002',
       'http://localhost:3001',
       'http://127.0.0.1:3001',
-      'https://caltopsoft.github.io',  // ✅ SIN /DevHub ni /DevHubAdmin
-      env.FRONTEND_ORIGIN,
-      env.ADMIN_ORIGIN,
-      env.EXTRA_ORIGIN
+      'https://caltopsoft.github.io',  // ✅ GitHub Pages - sin /DevHub ni /DevHubAdmin
+      env.FRONTEND_ORIGIN || null,
+      env.ADMIN_ORIGIN || null,
+      env.EXTRA_ORIGIN || null
     ].filter(Boolean);
+
+    console.log(`CORS Request origen: ${origin}`);
+    console.log(`Orígenes permitidos:`, allowedOrigins);
 
     // Si no hay origin (requests desde línea de comandos, etc), permitir
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.warn(`CORS bloqueado para origen: ${origin}`);
+      console.warn(`❌ CORS bloqueado para origen: ${origin}`);
       callback(new Error('No permitido por CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200,
   maxAge: 3600
 };
 
