@@ -149,15 +149,13 @@ export async function createProject(req: Request, res: Response) {
     
     await project.save();
 
-    // Notificar que el proyecto fue enviado para revisión
-    try {
-      await notificationService.notifyProjectSubmitted(
-        project._id.toString(),
-        userId
-      );
-    } catch (notificationError) {
+    // DESPUÉS (SIN AWAIT):
+    notificationService.notifyProjectSubmitted(
+      project._id.toString(),
+      userId
+    ).catch(notificationError => {
       console.error('Error enviando notificación de proyecto creado:', notificationError);
-    }
+    });
     
     res.status(201).json({
       project,
@@ -663,15 +661,13 @@ export async function resubmitProject(req: Request, res: Response) {
     project.status = 'pending';
     await project.save();
 
-    // Notificar que el proyecto fue reenviado
-    try {
-      await notificationService.notifyProjectSubmitted(
-        project._id.toString(),
-        userId
-      );
-    } catch (notificationError) {
+    // DESPUÉS (SIN AWAIT):
+    notificationService.notifyProjectSubmitted(
+      project._id.toString(),
+      userId
+    ).catch(notificationError => {
       console.error('Error enviando notificación de reenvío:', notificationError);
-    }
+    });
 
     res.json({
       project,
@@ -912,7 +908,9 @@ export async function createProjectWithFiles(req: Request, res: Response) {
     }
 
     // 6. ¡TODO OK! → Enviar notificación
-    await notificationService.notifyProjectSubmitted(project._id.toString(), userId);
+    // 6. ¡TODO OK! → Enviar notificación en background
+    notificationService.notifyProjectSubmitted(project._id.toString(), userId)
+      .catch(err => console.error('Error enviando notificación:', err));
 
     return res.status(201).json({
       project,
