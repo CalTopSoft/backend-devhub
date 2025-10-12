@@ -30,7 +30,7 @@ const corsOptions = {
   origin: [
     env.FRONTEND_ORIGIN || 'http://localhost:3002',
     env.ADMIN_ORIGIN || 'http://localhost:3001',
-    env.EXTRA_ORIGIN || 'http://127.0.0.1:3001', 'https://caltopsoft.github.io/DevHub', 'https://caltopsoft.github.io/DevHubAdmin',
+    env.EXTRA_ORIGIN || 'http://127.0.0.1:3001', 'https://caltopsoft.github.io/DevHub', 'https://caltopsoft.github.io/DevHubAdmin'
   ].filter(Boolean), // Filtra valores falsy
   credentials: true
 };
