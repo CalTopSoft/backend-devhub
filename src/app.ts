@@ -1,4 +1,4 @@
-// src/app.ts - VERSIÓN ACTUALIZADA
+// src/app.ts - CORS CORREGIDO
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -17,7 +17,7 @@ import adminRoutes from './routes/admin.routes';
 import categoriesRoutes from './routes/categories.routes';
 import statsRoutes from './routes/stats.routes';
 import notificationsRoutes from './routes/notifications.routes';
-import uploadRoutes from './routes/upload.routes'; // NUEVA RUTA
+import uploadRoutes from './routes/upload.routes';
 import platformsRoutes from './routes/platforms.routes';
 
 const app = express();
@@ -25,27 +25,45 @@ const app = express();
 // Security middleware
 app.use(helmet());
 
-// CORS configuration - usar env en lugar de process.env directamente
+// CORS configuration - AHORA CORRECTO
 const corsOptions = {
-  origin: [
-    env.FRONTEND_ORIGIN || 'http://localhost:3002',
-    env.ADMIN_ORIGIN || 'http://localhost:3001',
-    env.EXTRA_ORIGIN || 'http://127.0.0.1:3001', 'https://caltopsoft.github.io/DevHub', 'https://caltopsoft.github.io/DevHubAdmin'
-  ].filter(Boolean), // Filtra valores falsy
-  credentials: true
+  origin: function (origin, callback) {
+    // Lista de orígenes permitidos (sin paths)
+    const allowedOrigins = [
+      'http://localhost:3002',
+      'http://localhost:3001',
+      'http://127.0.0.1:3001',
+      'https://caltopsoft.github.io',  // ✅ SIN /DevHub ni /DevHubAdmin
+      env.FRONTEND_ORIGIN,
+      env.ADMIN_ORIGIN,
+      env.EXTRA_ORIGIN
+    ].filter(Boolean);
+
+    // Si no hay origin (requests desde línea de comandos, etc), permitir
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS bloqueado para origen: ${origin}`);
+      callback(new Error('No permitido por CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 3600
 };
 
 app.use(cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 2000 // limit each IP to 2000 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 2000
 });
 app.use(limiter);
 
-// Body parsing - Aumentar límite para archivos base64
-app.use(express.json({ limit: '50mb' })); // Aumentado de 10mb a 50mb
+// Body parsing
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Routes
@@ -57,7 +75,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/downloads', downloadsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationsRoutes);
-app.use('/api/upload', uploadRoutes); // NUEVA RUTA
+app.use('/api/upload', uploadRoutes);
 app.use('/api', categoriesRoutes);
 app.use('/api', statsRoutes);
 app.use('/api/platforms', platformsRoutes);
