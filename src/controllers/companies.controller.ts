@@ -700,6 +700,7 @@ export async function getPendingRequests(req: Request, res: Response) {
 }
 
 // Manejar solicitud de miembro (aceptar/rechazar)
+// Manejar solicitud de miembro (aceptar/rechazar)
 export async function handleMemberRequest(req: Request, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ error: 'No autorizado' });
@@ -740,39 +741,36 @@ export async function handleMemberRequest(req: Request, res: Response) {
         await user.save();
       }
 
-      // Notificar aceptación
-      try {
-        await notificationService.createNotification({
-          userId: userId,
-          type: 'company_invitation', // Quitamos 'as any'
-          title: 'Solicitud aceptada',
-          message: `Tu solicitud para unirte a "${company.name}" ha sido aceptada.`,
-          data: { companyName: company.name, action: 'accepted' },
-          sendEmail: true
-        });
-      } catch (notifError) {
-        console.error('Error enviando notificación:', notifError);
-      }
+      // ✅ CAMBIO: Enviar notificación en BACKGROUND (sin esperar)
+      notificationService.createNotification({
+        userId: userId,
+        type: 'company_invitation',
+        title: 'Solicitud aceptada',
+        message: `Tu solicitud para unirte a "${company.name}" ha sido aceptada.`,
+        data: { companyName: company.name, action: 'accepted' },
+        sendEmail: true
+      }).catch(notifError => {
+        console.error('Error enviando notificación de aceptación:', notifError);
+      });
     } else {
-      // Notificar rechazo
-      try {
-        await notificationService.createNotification({
-          userId: userId,
-          type: 'company_invitation', // Quitamos 'as any'
-          title: 'Solicitud rechazada',
-          message: `Tu solicitud para unirte a "${company.name}" ha sido rechazada.`,
-          data: { companyName: company.name, action: 'rejected' },
-          sendEmail: true
-        });
-      } catch (notifError) {
-        console.error('Error enviando notificación:', notifError);
-      }
+      // ✅ CAMBIO: Enviar notificación en BACKGROUND (sin esperar)
+      notificationService.createNotification({
+        userId: userId,
+        type: 'company_invitation',
+        title: 'Solicitud rechazada',
+        message: `Tu solicitud para unirte a "${company.name}" ha sido rechazada.`,
+        data: { companyName: company.name, action: 'rejected' },
+        sendEmail: true
+      }).catch(notifError => {
+        console.error('Error enviando notificación de rechazo:', notifError);
+      });
     }
 
     // Remover de solicitudes pendientes
     company.pendingRequests?.splice(requestIndex, 1);
     await company.save();
 
+    // ✅ Responder inmediatamente (sin esperar al email)
     res.json({
       message: action === 'accept' ? 'Miembro aceptado exitosamente' : 'Solicitud rechazada',
       action,
