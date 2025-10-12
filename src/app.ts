@@ -40,7 +40,6 @@ const corsOptions = {
     ].filter(Boolean);
 
     console.log(`CORS Request origen: ${origin}`);
-    console.log(`Orígenes permitidos:`, allowedOrigins);
 
     // Si no hay origin (requests desde línea de comandos, etc), permitir
     if (!origin || allowedOrigins.includes(origin)) {
