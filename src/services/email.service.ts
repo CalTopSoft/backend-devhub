@@ -36,7 +36,7 @@ export async function sendResetPasswordEmail({
   
   if (origin === env.ADMIN_ORIGIN || origin === env.EXTRA_ORIGIN) {
     // Si viene del admin, usar la página del admin
-    resetUrl = `${env.ADMIN_ORIGIN}/reset-password.html?token=${resetToken}`;
+    resetUrl = `${env.ADMIN_ORIGIN}/public/reset-password.html?token=${resetToken}`;
   } else {
     // Si viene de la plataforma principal, usar hash routing
     resetUrl = `${env.FRONTEND_ORIGIN}/#/reset-password?token=${resetToken}`;

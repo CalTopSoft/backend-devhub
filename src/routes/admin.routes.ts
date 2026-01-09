@@ -12,6 +12,7 @@ import {
   getFeedbackReasons,
   getUsers, 
   resetUserPassword, 
+  deleteUser,
   exportBackup, 
   importBackup, 
   getBackupSize,
@@ -81,4 +82,7 @@ router.get('/ping', authMiddleware(['admin']), ping);
 // Agregar estas rutas ANTES del export:
 router.patch('/companies/:id/verify', authMiddleware(['admin']), verifyCompany);
 router.get('/companies/rankings', authMiddleware(['admin']), getCompanyRankings);
+
+router.delete('/users/:id', authMiddleware(['admin']), deleteUser);
+
 export default router;

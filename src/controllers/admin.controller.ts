@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Project from '../models/Project';
 import User from '../models/User';
 import Company from '../models/Company';
+import Review from '../models/Review';
 import notificationService, { 
   REJECTION_REASONS, 
   EDIT_REASONS, 
@@ -980,6 +981,88 @@ export async function getCompanyRankings(req: Request, res: Response) {
 
     res.json(companies);
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
+export async function deleteUser(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    if (!validateObjectId(id)) {
+      return res.status(400).json({ error: 'ID de usuario inválido' });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // No permitir eliminar admins (excepto por otro admin)
+    if (user.role === 'admin' && req.user?.role !== 'admin') {
+      return res.status(403).json({ error: 'No puedes eliminar administradores' });
+    }
+
+    // Buscar empresas donde es owner
+    const ownedCompanies = await Company.find({ ownerId: id });
+
+    // Para cada empresa, transferir ownership al primer miembro disponible
+    for (const company of ownedCompanies) {
+      const newOwner = company.members.find(m => m.userId?.toString() !== id);
+      
+      if (newOwner && newOwner.userId) {
+        // Transferir ownership
+        company.ownerId = newOwner.userId;
+        
+        // Actualizar roles: remover Owner del usuario actual, agregar al nuevo
+        company.members.forEach(m => {
+          if (m.userId?.toString() === id) {
+            m.roles = m.roles.filter(r => r !== 'Owner');
+          } else if (newOwner.userId && m.userId?.toString() === newOwner.userId.toString()) {
+            if (!m.roles.includes('Owner')) {
+              m.roles.push('Owner');
+            }
+          }
+        });
+        
+        await company.save();
+      } else {
+        // Si no hay otros miembros, marcar empresa como inactiva
+        company.status = 'inactive';
+        company.deletedAt = new Date();
+        company.deleteReason = 'Owner eliminado sin miembros disponibles';
+        await company.save();
+      }
+    }
+
+    // Eliminar usuario de todas las empresas donde es miembro
+    await Company.updateMany(
+      { 'members.userId': id },
+      { $pull: { members: { userId: id } } }
+    );
+
+    // Eliminar comentarios del usuario
+    await Review.deleteMany({ userId: id });
+
+    // Marcar proyectos como huérfanos si era participante único
+    await Project.updateMany(
+      { participants: id },
+      { 
+        $pull: { participants: id },
+        $addToSet: { inactiveMembers: id }
+      }
+    );
+
+    // Eliminar usuario
+    await User.findByIdAndDelete(id);
+
+    res.json({
+      message: 'Usuario eliminado exitosamente',
+      companiesTransferred: ownedCompanies.length,
+      userId: id
+    });
+
+  } catch (error: any) {
+    console.error('Error in deleteUser:', error);
     res.status(500).json({ error: error.message });
   }
 }

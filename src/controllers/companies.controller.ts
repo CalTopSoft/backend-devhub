@@ -700,7 +700,6 @@ export async function getPendingRequests(req: Request, res: Response) {
 }
 
 // Manejar solicitud de miembro (aceptar/rechazar)
-// Manejar solicitud de miembro (aceptar/rechazar)
 export async function handleMemberRequest(req: Request, res: Response) {
   try {
     if (!req.user) return res.status(401).json({ error: 'No autorizado' });

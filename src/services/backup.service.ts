@@ -6,8 +6,19 @@ import Audit from '../models/Audit';
 import Notification from '../models/Notification';
 import ProjectCategory from '../models/ProjectCategory';
 import Role from '../models/Role';
+import Platform from '../models/Platform'; // ← NUEVO
 
-export async function exportBackup(collections: string[] = ['users', 'companies', 'projects', 'reviews', 'audits', 'notifications', 'projectcategories', 'roles']) {
+export async function exportBackup(collections: string[] = [
+  'users', 
+  'companies', 
+  'projects', 
+  'reviews', 
+  'audits', 
+  'notifications', 
+  'projectcategories', 
+  'roles',
+  'platforms' // ← NUEVO
+]) {
   const backup: { [key: string]: any } = {};
   let totalSize = 0;
 
@@ -21,6 +32,7 @@ export async function exportBackup(collections: string[] = ['users', 'companies'
     notifications: Notification,
     projectcategories: ProjectCategory,
     roles: Role,
+    platforms: Platform, // ← NUEVO
   };
 
   // Obtener datos de las colecciones seleccionadas
@@ -50,6 +62,7 @@ export async function importBackup(backupData: { [key: string]: any }) {
     notifications: Notification,
     projectcategories: ProjectCategory,
     roles: Role,
+    platforms: Platform, // ← NUEVO
   };
 
   for (const [collection, data] of Object.entries(backupData)) {

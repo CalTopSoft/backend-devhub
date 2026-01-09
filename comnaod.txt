@@ -1,0 +1,5 @@
+npm start
+
+npx live-server --port=3001  
+
+npx live-server --port=3002
